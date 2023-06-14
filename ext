@@ -1,0 +1,150 @@
+from os import mkdir, listdir
+from os.path import exists, isfile
+from shutil import move, Error
+from argparse import ArgumentParser
+
+def crear_carpetas_si_no_existe(carpetas, ruta="./"):
+    """
+        Esta funcion recibe en forma de lista, las carpetas a crear
+        si no existen. Ejemplo de uso:
+
+            carpetas = ["documentos", "fotos"]
+            crear_carpetas_si_no_existe(carpetas)
+
+        Esto comprueba si exite la carpeta documentos y la carpeta fotos,
+        en caso contrario, la crea
+    """
+    
+    for carpeta in carpetas:
+        if exists(ruta+carpeta) != True:
+            # si la carpeta no existe exists() retorna False lo cual es diferente a True
+            #  y esta condicion se llevara a cabo
+            mkdir(ruta+carpeta)
+            
+    
+
+def asociar_carpetas_con_extensiones(nombre_carpeta, extensiones_de_archivos, ruta=".", ArchivosExcepciones=[]):
+    """
+        Esta funcion recibe una tupla en el argumento extensiones_de_archivos 
+        que contiene las extensiones de los archivos que se quiere
+        guardar en la carpeta que se especificar en el argumento nombre_carpeta.
+        nombre_carpeta es un argumento de tipo string(str), este valor a de ser el nombre
+        de la carpeta a la que se le asociara lass extensiones. Opcionalmente se le puede
+        especificar la ruta a trabajar, con el argumento ruta, el cual a de ser un string.
+        Ejemplo de uso:
+        
+            MisExtensiones = (".txt", ".docx")
+            MiCarpeta      = "Documentos"
+            asociar_carpetas_con_extensiones(MisExtensiones, MiCarpeta)
+    """
+    ArchivosParaEstaCarpeta = []
+    
+    for archivo in listdir(ruta):
+        if archivo.endswith(extensiones_de_archivos) == True and archivo not in ArchivosExcepciones and isfile(ruta+archivo):
+            """"
+                "archivo not in ArchivosExcepciones" comprueba que nuestro archivo no esta
+                en la lista de ArchivosExcepciones, en caso de que lo este, este archivo no
+                se agrega a la lista de ArchivosParaEstaCarpeta, ya que no queremos mover los
+                archivos que se contiene en ArchivosExcepciones.
+                isfile() comprueba que sea un archivo y un carpeta, pues si hay una carpeta que
+                lleve en su nombre alguna extension, el programa generar un error.
+            """
+            ArchivosParaEstaCarpeta.append(ruta+archivo)
+    """
+        el metodo endswith() comprueba que el archivo finaliza con la extension deseada
+        ejemplo:
+        
+            archivo = "Imagen.png"
+            extencion = ".png"    
+            x = archivo.endswith(extenxion)
+            print(x)
+            
+        En este caso, al acabar el string "Imagen.png" con la extension ".png", x valdra True.
+        
+        Con este bucle, se lista el contenido del directorio actual haciendo uso de la funcion
+        listdir() del modulo os. A continuacion se recorre la lista que retorna y almacena
+        cada valor en archivo por iteracion(repeticion). con el if comprobamos si el archivo
+        acaba en la extension deseada, y solo si es asi, se agrega dicho archivo a la lista documentos.
+    """
+    
+    return ArchivosParaEstaCarpeta
+
+if __name__ == "__main__":
+    """
+        Este codigo solo sera ejecutado si no a sido importado este archivo.
+        Es decir, solo si se a ejecutado mediante python Orden.py.
+        Si se a importado mediante un import Orden, este codigo no se
+        ejecutara.
+    """
+
+    parse = ArgumentParser() # Realizamos una instancia de la clase ArgumentParser
+    
+    # creamos parametros para nuestro script, si no se usan, usaremos datos por defectos:
+    parse.add_argument("-rf", "--directoryFile", help="se le indica la ruta donde se encuentran los archivos que queremos organizar.", type=str, default="./")
+    parse.add_argument("-ro", "--directoryOutput", help="Se le indica la ruta donde se creara las carpetas y se ordenara los elementos en ellas.", type=str, default="./")
+
+    # parseamos los parametros del programa para poder usarlos
+    parse = parse.parse_args()
+    # Los valores por defecto son la ruta "./", es decir, el directorio actual.
+    
+    
+    """
+        En esta lista metemos los archivos especiales que no queremos mover, como es el caso
+        de nuestro script. __file__ almacena como valor el nombre de este script, por lo que
+        si cambiamos el nombre de este archivo, esta variable se encargara de poner su valor
+        correspondiente
+    """
+    ArchivosExcepciones = [__file__.split("\\")[-1], "requirements.txt"]
+    """
+        __file__ = 'C:\\Users\\Usuario\\Documents\\GitHub\\Organizar-Archivos-Por-Su-Extension\\Orden.py'
+    
+        >>> archivo = __file__.split("\\")
+        >>> print(archivo)
+        ['C:', 'Users', 'Usuario', 'Documents', 'GitHub', 'Organizar-Archivos-Por-Su-Extension', 'Orden.py']
+        >>> print(archivo[-1])
+        "Orden.py"
+        
+    """
+
+
+    carpetas = ["documentos", "fotos", "videos", "musica", "otros"]
+    crear_carpetas_si_no_existe(carpetas, ruta=parse.directoryOutput)
+    # crea las carpetas necesarias
+    
+    extensionesdocumentos = [   
+                                (".pdf", ".doc", ".docx", ".txt", ".odt", ".xlsx", ".ppt", ".pptx"),# documentos
+                                (".png", ".jpg", ".jpeg", ".gif", ".tiff", ".bmp"),                 # fotos
+                                (".mp4", ".mkv", ".avi", ".mov", ".flv", ".divx"),                  # videos
+                                (".mp3", ".aac", ".wav", ".aiff", ".wma", ".opus", ".ogg"),         # musica
+                                (   
+                                    ".py", ".rar", ".zip", ".html", ".tmp", ".dat", ".exe", ".deb", 
+                                    ".dmg", ".psd", ".c", ".asm", ".java", ".rst"
+                                ), # otros
+                            ]
+    
+    for carpetaNumero in range(0, len(carpetas)):
+        """
+            Con este bucle, asociamos las carpetas y las extensiones mediante un indice.
+            Este bucle se repetira tantas veces como carpetas alla en la lista. y ira guardando
+            valores de tipo int en la variable carpetaNumero.
+        """
+        
+        ListaDeArchivos = asociar_carpetas_con_extensiones(carpetaNumero, extensionesdocumentos[carpetaNumero], ruta=parse.directoryFile, ArchivosExcepciones=ArchivosExcepciones) 
+        
+        print("\n".join(ListaDeArchivos))
+        """
+            Aqui imprimimos los archivos que se van a guardar en la carpeta,
+        """
+        
+        
+        for archivo in ListaDeArchivos:
+            """
+                este bucle, mueve los archivos del directorio que se desea a las carpetas creadas o ya
+                existentes que se especificaron
+            """
+            try:
+                
+                move(archivo, parse.directoryOutput+carpetas[carpetaNumero])
+            except Error:
+                print("{} El archivo {} \t ya existe en el directorio {}".format( archivo, carpetas[carpetaNumero]))
+            
